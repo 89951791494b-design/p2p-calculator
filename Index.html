@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Калькулятор</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* --- НОВЫЕ СТИЛИ ДЛЯ ТАБОВ --- */
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-button.active {
+            color: #ffffff;
+            /* Цвет по умолчанию (USDT) */
+            background-color: #16a085;
+            box-shadow: 0 4px 8px rgba(22, 160, 133, 0.2);
+        }
+        
+        /* Индивидуальные цвета для активных кнопок */
+        .tab-button[data-target="btc-window"].active {
+            background-color: #f7931a;
+            box-shadow: 0 4px 8px rgba(247, 147, 26, 0.2);
+        }
+        .tab-button[data-target="eth-window"].active {
+            background-color: #627eea;
+            box-shadow: 0 4px 8px rgba(98, 126, 234, 0.2);
+        }
+
+        /* --- /НОВЫЕ СТИЛИ ДЛЯ ТАБОВ --- */
+
+
+        .calculator-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            max-width: 400px; /* Ограничиваем ширину, т.к. окно одно */
+        }
+
+        .window {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            width: 100%; /* Окно теперь занимает всю ширину контейнера */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        /* --- НОВЫЙ СТИЛЬ ДЛЯ СКРЫТИЯ --- */
+        .window.hidden {
+            display: none;
+        }
+        /* --- /НОВЫЙ СТИЛЬ ДЛЯ СКРЫТИЯ --- */
+
+
+        .window h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #16a085;
+        }
+        
+        /* Специальные цвета для BTC и ETH */
+        #btc-window h2 { color: #f7931a; }
+        #eth-window h2 { color: #627eea; }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box; 
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #16a085;
+            box-shadow: 0 0 0 2px rgba(22, 160, 133, 0.2);
+        }
+
+        .results {
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .results p {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .results p span {
+            font-weight: normal;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .profit { color: #27ae60; }
+        .loss { color: #c0392b; }
+
+    </style>
+</head>
+<body>
+
+    <h1>P2P Калькулятор (Фиат: KZT)</h1>
+
+    <div class="tab-buttons">
+        <button class="tab-button active" data-target="usdt-window">USDT</button>
+        <button class="tab-button" data-target="btc-window">BTC</button>
+        <button class="tab-button" data-target="eth-window">ETH</button>
+    </div>
+
+    <div class="calculator-container">
+        
+        <div class="window calculator-window" id="usdt-window">
+            <h2>USDT / KZT</h2>
+            
+            <div class="input-group">
+                <label for="usdt-deposit">Депозит (оборот), KZT</label>
+                <input type="number" id="usdt-deposit" placeholder="100000" step="any" oninput="calculate('usdt')">
+            </div>
+
+            <div class="input-group">
+                <label for="usdt-buy-price">Цена покупки</label>
+                <input type="number" id="usdt-buy-price" placeholder="450" step="any" oninput="calculate('usdt')">
+            </div>
+            
+            <div class="input-group">
+                <label for="usdt-buy-comm">Комиссия покупки, %</label>
+                <input type="number" id="usdt-buy-comm" placeholder="0.1" step="any" value="0" oninput="calculate('usdt')">
+            </div>
+
+            <div class="input-group">
+                <label for="usdt-sell-price">Цена продажи</label>
+                <input type="number" id="usdt-sell-price" placeholder="452" step="any" oninput="calculate('usdt')">
+            </div>
+
+            <div class="input-group">
+                <label for="usdt-sell-comm">Комиссия продажи, %</label>
+                <input type="number" id="usdt-sell-comm" placeholder="0.1" step="any" value="0" oninput="calculate('usdt')">
+            </div>
+
+            <div class="results">
+                <p>Спред: <span id="usdt-spread">0.00</span>%</p>
+                <p>Профит (KZT): <span id="usdt-profit">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="window calculator-window hidden" id="btc-window">
+            <h2>BTC / KZT</h2>
+            
+            <div class="input-group">
+                <label for="btc-deposit">Депозит (оборот), KZT</label>
+                <input type="number" id="btc-deposit" placeholder="100000" step="any" oninput="calculate('btc')">
+            </div>
+
+            <div class="input-group">
+                <label for="btc-buy-price">Цена покупки</label>
+                <input type="number" id="btc-buy-price" placeholder="30000000" step="any" oninput="calculate('btc')">
+            </div>
+            
+            <div class="input-group">
+                <label for="btc-buy-comm">Комиссия покупки, %</label>
+                <input type="number" id="btc-buy-comm" placeholder="0.1" step="any" value="0" oninput="calculate('btc')">
+            </div>
+
+            <div class="input-group">
+                <label for="btc-sell-price">Цена продажи</label>
+                <input type="number" id="btc-sell-price" placeholder="30100000" step="any" oninput="calculate('btc')">
+            </div>
+
+            <div class="input-group">
+                <label for="btc-sell-comm">Комиссия продажи, %</label>
+                <input type="number" id="btc-sell-comm" placeholder="0.1" step="any" value="0" oninput="calculate('btc')">
+            </div>
+
+            <div class="results">
+                <p>Спред: <span id="btc-spread">0.00</span>%</p>
+                <p>Профит (KZT): <span id="btc-profit">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="window calculator-window hidden" id="eth-window">
+            <h2>ETH / KZT</h2>
+            
+            <div class="input-group">
+                <label for="eth-deposit">Депозит (оборот), KZT</label>
+                <input type="number" id="eth-deposit" placeholder="100000" step="any" oninput="calculate('eth')">
+            </div>
+
+            <div class="input-group">
+                <label for="eth-buy-price">Цена покупки</label>
+                <input type="number" id="eth-buy-price" placeholder="1500000" step="any" oninput="calculate('eth')">
+            </div>
+            
+            <div class="input-group">
+                <label for="eth-buy-comm">Комиссия покупки, %</label>
+                <input type="number" id="eth-buy-comm" placeholder="0.1" step="any" value="0" oninput="calculate('eth')">
+            </div>
+
+            <div class="input-group">
+                <label for="eth-sell-price">Цена продажи</label>
+                <input type="number" id="eth-sell-price" placeholder="1510000" step="any" oninput="calculate('eth')">
+            </div>
+
+            <div class="input-group">
+                <label for="eth-sell-comm">Комиссия продажи, %</label>
+                <input type="number"id="eth-sell-comm" placeholder="0.1" step="any" value="0" oninput="calculate('eth')">
+            </div>
+
+            <div class="results">
+                <p>Спред: <span id="eth-spread">0.00</span>%</p>
+                <p>Профит (KZT): <span id="eth-profit">0.00</span></p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Вспомогательная функция для получения числового значения из поля
+        function getValue(id) {
+            const value = document.getElementById(id).value;
+            return parseFloat(value) || 0;
+        }
+
+        // Основная функция расчета (осталась без изменений)
+        function calculate(crypto) {
+            const deposit = getValue(crypto + '-deposit');
+            const buyPrice = getValue(crypto + '-buy-price');
+            const buyComm = getValue(crypto + '-buy-comm');
+            const sellPrice = getValue(crypto + '-sell-price');
+            const sellComm = getValue(crypto + '-sell-comm');
+
+            const spreadEl = document.getElementById(crypto + '-spread');
+            const profitEl = document.getElementById(crypto + '-profit');
+            
+            const netBuyPrice = buyPrice * (1 + buyComm / 100);
+            const netSellPrice = sellPrice * (1 - sellComm / 100);
+
+            if (netBuyPrice === 0) {
+                spreadEl.textContent = '0.00';
+                profitEl.textContent = '0.00';
+                profitEl.className = '';
+                return;
+            }
+
+            const spread = ((netSellPrice - netBuyPrice) / netBuyPrice) * 100;
+            const profit = deposit * (spread / 100);
+
+            spreadEl.textContent = spread.toFixed(2);
+            profitEl.textContent = profit.toFixed(2);
+            
+            profitEl.className = profit > 0 ? 'profit' : (profit < 0 ? 'loss' : '');
+            spreadEl.className = spread > 0 ? 'profit' : (spread < 0 ? 'loss' : '');
+        }
+
+        // Запускаем расчет для всех окон при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            calculate('usdt');
+            calculate('btc');
+            calculate('eth');
+
+            // --- НОВЫЙ КОД ДЛЯ ПЕРЕКЛЮЧЕНИЯ ТАБОВ ---
+            
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const windows = document.querySelectorAll('.calculator-window');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // 1. Получаем ID целевого окна из 'data-target'
+                    const targetId = button.getAttribute('data-target');
+                    
+                    // 2. Убираем класс 'active' у всех кнопок
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // 3. Добавляем класс 'active' нажатой кнопке
+                    button.classList.add('active');
+
+                    // 4. Скрываем все окна
+                    windows.forEach(window => {
+                        window.classList.add('hidden');
+                    });
+                    
+                    // 5. Показываем целевое окно
+                    document.getElementById(targetId).classList.remove('hidden');
+                });
+            });
+
+            // --- /НОВЫЙ КОД ДЛЯ ПЕРЕКЛЮЧЕНИЯ ТАБОВ ---
+        });
+    </script>
+
+</body>
+</html>
