@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Калькулятор</title>
+    
+    <meta name="theme-color" content="#2e7d32">
+    <link rel="manifest" href="manifest.json">
+    
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="P2P Calc">
+    
+    <style>
+        :root {
+            --primary-color: #2e7d32; /* Темно-зеленый */
+            --primary-light: #4caf50; /* Зеленый из картинки */
+            --secondary-color: #f0f0f0; /* Светло-серый для неакт. кнопок */
+            --text-color: #333;
+            --border-color: #ddd;
+            --bg-color: #ffffff;
+            --result-bg: #f9f9f9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; 
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            padding: 24px;
+            background-color: var(--bg-color);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .mode-tabs {
+            display: flex;
+            background-color: #e8f5e9; 
+            padding: 8px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        .mode-tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .calculator-body {
+            padding: 24px;
+        }
+
+        #simple-calc, #complex-calc {
+            display: none;
+        }
+        
+        #simple-calc.active, #complex-calc.active {
+            display: block;
+        }
+
+        .crypto-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .crypto-tab {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .crypto-tab.active {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        
+        .results {
+            margin-top: 24px;
+            padding: 20px;
+            background-color: var(--result-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 500;
+            flex-wrap: wrap; 
+        }
+        
+        .result-item:first-child {
+            margin-bottom: 12px;
+        }
+
+        .result-item span:first-child {
+            color: #333;
+            margin-right: 10px; 
+        }
+        
+        .result-item .value {
+            font-weight: 700;
+            font-size: 20px;
+            word-break: break-all; 
+        }
+
+        .result-item .spread-value {
+            color: var(--primary-color);
+        }
+
+        .result-item .profit-value {
+            color: #333;
+            background-color: #e8f5e9;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>P2P Калькулятор (Фиат: KZT)</h1>
+        </header>
+
+        <div class="mode-tabs">
+            <div class="mode-tab active" data-mode="simple">Простой</div>
+            <div class="mode-tab" data-mode="complex">Сложный</div>
+        </div>
+
+        <div class="calculator-body active" id="simple-calc">
+            <div class="crypto-tabs">
+                <button class="crypto-tab active" data-crypto="USDT">USDT</button>
+                <button class="crypto-tab" data-crypto="BTC">BTC</button>
+                <button class="crypto-tab" data-crypto="ETH">ETH</button>
+            </div>
+
+            <h2 id="simple-title">USDT / KZT</h2>
+
+            <div class="form-group">
+                <label for="s-deposit">Депозит (оборот), KZT</label>
+                <input type="number" id="s-deposit" placeholder="600000" value="600000">
+            </div>
+            <div class="form-group">
+                <label for="s-buy-price">Цена покупки</label>
+                <input type="number" id="s-buy-price" placeholder="490" value="490">
+            </div>
+            <div class="form-group">
+                <label for="s-buy-comm">Комиссия покупки, %</label>
+                <input type="number" id="s-buy-comm" placeholder="0.9" value="0.9">
+            </div>
+            <div class="form-group">
+                <label for="s-sell-price">Цена продажи</label>
+                <input type="number" id="s-sell-price" placeholder="535" value="535">
+            </div>
+            <div class="form-group">
+                <label for="s-sell-comm">Комиссия продажи, %</label>
+                <input type="number" id="s-sell-comm" placeholder="0" value="0">
+            </div>
+
+            <div class="results">
+                <div class="result-item">
+                    <span>Спред:</span>
+                    <span class="value spread-value" id="s-spread-result">8.21 %</span>
+                </div>
+                <div class="result-item">
+                    <span>Профит (KZT):</span>
+                    <span class="value profit-value" id="s-profit-result">49258.71</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="calculator-body" id="complex-calc">
+            <h2>KZT ➔ Крипто A ➔ Крипто B ➔ KZT</h2>
+
+            <div class="form-group">
+                <label for="c-deposit">Депозит (оборот), KZT</label>
+                <input type="number" id="c-deposit" placeholder="600000" value="600000">
+            </div>
+            
+            <hr style="border:0; border-top: 1px solid #eee; margin: 20px 0;">
+
+            <div class="form-group">
+                <label for="c-crypto1">Шаг 1: Купить (Крипто A)</label>
+                <select id="c-crypto1">
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                    <option value="USDT">USDT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="c-price1" id="c-label-price1">Цена покупки BTC (за KZT)</label>
+                <input type="number" id="c-price1" placeholder="Цена KZT">
+            </div>
+            <div class="form-group">
+                <label for="c-comm1">Комиссия покупки, %</label>
+                <input type="number" id="c-comm1" placeholder="0" value="0">
+            </div>
+
+            <hr style="border:0; border-top: 1px solid #eee; margin: 20px 0;">
+            
+            <div class="form-group">
+                <label for="c-crypto2">Шаг 2: Продать (Крипто B)</label>
+                <select id="c-crypto2">
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="c-price2" id="c-label-price2">Цена продажи BTC (за USDT)</label>
+                <input type="number" id="c-price2" placeholder="Курс обмена">
+            </div>
+            <div class="form-group">
+                <label for="c-comm2">Комиссия продажи, %</label>
+                <input type="number" id="c-comm2" placeholder="0" value="0">
+            </div>
+
+            <hr style="border:0; border-top: 1px solid #eee; margin: 20px 0;">
+            
+            <div class="form-group">
+                <label for="c-price3" id="c-label-price3">Шаг 3: Цена продажи USDT (за KZT)</label>
+                <input type="number" id="c-price3" placeholder="Цена KZT">
+            </div>
+             <div class="form-group">
+                <label for="c-comm3">Комиссия продажи, %</label>
+                <input type="number" id="c-comm3" placeholder="0" value="0">
+            </div>
+            
+            <div class="results">
+                <div class="result-item">
+                    <span>Спред:</span>
+                    <span class="value spread-value" id="c-spread-result">0.00 %</span>
+                </div>
+                <div class="result-item">
+                    <span>Профит (KZT):</span>
+                    <span class="value profit-value" id="c-profit-result">0.00</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- VVV: КОД ДЛЯ PWA (УСТАНОВКИ) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker зарегистрирован успешно:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Ошибка регистрации Service Worker:', error);
+                    });
+            });
+        }
+        // --- ^^^: КОНЕЦ КОДА PWA ---
+
+
+        // --- VVV: КОД КАЛЬКУЛЯТОРА ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Переключатели режимов (Простой / Сложный) ---
+            const modeTabs = document.querySelectorAll('.mode-tab');
+            const calcBodies = document.querySelectorAll('.calculator-body');
+            
+            modeTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    modeTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    const mode = tab.dataset.mode;
+                    calcBodies.forEach(body => {
+                        body.classList.remove('active');
+                        if (body.id === `${mode}-calc`) {
+                            body.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            // --- Логика Простого Калькулятора ---
+            const sInputs = [
+                document.getElementById('s-deposit'),
+                document.getElementById('s-buy-price'),
+                document.getElementById('s-buy-comm'),
+                document.getElementById('s-sell-price'),
+                document.getElementById('s-sell-comm')
+            ];
+            const sSpreadResult = document.getElementById('s-spread-result');
+            const sProfitResult = document.getElementById('s-profit-result');
+            const cryptoTabs = document.querySelectorAll('.crypto-tab');
+            const simpleTitle = document.getElementById('simple-title');
+
+            // Переключение табов USDT/BTC/ETH
+            cryptoTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    cryptoTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    simpleTitle.textContent = `${tab.dataset.crypto} / KZT`;
+                    calculateSimple();
+                });
+            });
+
+            // Расчет
+            function calculateSimple() {
+                const deposit = parseFloat(sInputs[0].value) || 0;
+                const buyPrice = parseFloat(sInputs[1].value) || 0;
+                const buyComm = parseFloat(sInputs[2].value) || 0;
+                const sellPrice = parseFloat(sInputs[3].value) || 0;
+                const sellComm = parseFloat(sInputs[4].value) || 0;
+                
+                if (deposit === 0 || buyPrice === 0 || sellPrice === 0) {
+                    sSpreadResult.textContent = '0.00 %';
+                    sProfitResult.textContent = '0.00';
+                    return;
+                }
+
+                const effectiveBuyPrice = buyPrice * (1 + buyComm / 100);
+                const effectiveSellPrice = sellPrice * (1 - sellComm / 100);
+
+                if (effectiveBuyPrice === 0) {
+                    sSpreadResult.textContent = '0.00 %';
+                    sProfitResult.textContent = '0.00';
+                    return;
+                }
+
+                const spread = (effectiveSellPrice - effectiveBuyPrice) / effectiveBuyPrice;
+                const profit = deposit * spread;
+                const spreadPercent = spread * 100;
+
+                sSpreadResult.textContent = `${spreadPercent.toFixed(2)} %`;
+                sProfitResult.textContent = profit.toFixed(2);
+            }
+
+            sInputs.forEach(input => input.addEventListener('input', calculateSimple));
+            
+            // Загрузка сохраненных данных (localStorage)
+            document.getElementById('s-deposit').value = localStorage.getItem('s_deposit') || '600000';
+            document.getElementById('s-buy-price').value = localStorage.getItem('s_buy_price') || '490';
+            document.getElementById('s-buy-comm').value = localStorage.getItem('s_buy_comm') || '0.9';
+            document.getElementById('s-sell-price').value = localStorage.getItem('s_sell_price') || '535';
+            document.getElementById('s-sell-comm').value = localStorage.getItem('s_sell_comm') || '0';
+            
+            calculateSimple(); // Первый расчет при загрузке
+
+
+            // --- Логика Сложного Калькулятора ---
+            const cInputs = [
+                document.getElementById('c-deposit'),
+                document.getElementById('c-price1'),
+                document.getElementById('c-comm1'),
+                document.getElementById('c-price2'),
+                document.getElementById('c-comm2'),
+                document.getElementById('c-price3'),
+                document.getElementById('c-comm3')
+            ];
+            const cCrypto1 = document.getElementById('c-crypto1');
+            const cCrypto2 = document.getElementById('c-crypto2');
+            const cSpreadResult = document.getElementById('c-spread-result');
+            const cProfitResult = document.getElementById('c-profit-result');
+
+            function updateComplexLabels() {
+                const crypto1 = cCrypto1.value;
+                const crypto2 = cCrypto2.value;
+                document.getElementById('c-label-price1').textContent = `Цена покупки ${crypto1} (за KZT)`;
+                document.getElementById('c-label-price2').textContent = `Цена продажи ${crypto1} (за ${crypto2})`;
+                document.getElementById('c-label-price3').textContent = `Шаг 3: Цена продажи ${crypto2} (за KZT)`;
+            }
+            
+            function calculateComplex() {
+                const deposit = parseFloat(cInputs[0].value) || 0;
+                const price1 = parseFloat(cInputs[1].value) || 0;
+                const comm1 = parseFloat(cInputs[2].value) || 0;
+                const price2 = parseFloat(cInputs[3].value) || 0;
+                const comm2 = parseFloat(cInputs[4].value) || 0;
+                const price3 = parseFloat(cInputs[5].value) || 0;
+                const comm3 = parseFloat(cInputs[6].value) || 0;
+
+                // Сохранение в localStorage
+                localStorage.setItem('c_deposit', deposit);
+                // ... (можно добавить сохранение для всех полей сложного калькулятора)
+
+                if (deposit === 0 || price1 === 0 || price2 === 0 || price3 === 0) {
+                    cSpreadResult.textContent = '0.00 %';
+                    cProfitResult.textContent = '0.00';
+                    return;
+                }
+
+                const effectiveBuyPrice1 = price1 * (1 + comm1 / 100);
+                if (effectiveBuyPrice1 === 0) {
+                    cSpreadResult.textContent = '0.00 %';
+                    cProfitResult.textContent = '0.00';
+                    return;
+                }
+                const amountCryptoA = deposit / effectiveBuyPrice1;
+
+                const effectiveRate2 = price2 * (1 - comm2 / 100);
+                const amountCryptoB = amountCryptoA * effectiveRate2;
+
+                const effectiveSellPrice3 = price3 * (1 - comm3 / 100);
+                const finalKZT = amountCryptoB * effectiveSellPrice3;
+
+                const profit = finalKZT - deposit;
+                const spread = (profit / deposit) * 100;
+
+                cSpreadResult.textContent = `${spread.toFixed(2)} %`;
+                cProfitResult.textContent = profit.toFixed(2);
+            }
+
+            [...cInputs, cCrypto1, cCrypto2].forEach(el => {
+                el.addEventListener('input', calculateComplex);
+                el.addEventListener('change', calculateComplex);
+            });
+            
+            [cCrypto1, cCrypto2].forEach(el => {
+                el.addEventListener('change', updateComplexLabels);
+            });
+            
+            // Загрузка данных для сложного калькулятора (простой пример)
+            document.getElementById('c-deposit').value = localStorage.getItem('c_deposit') || '600000';
+            
+            updateComplexLabels();
+            calculateComplex(); // Первый расчет
+        });
+        // --- ^^^: КОНЕЦ КОДА КАЛЬКУЛЯТОРА ---
+    </script>
+</body>
+</html>
